@@ -7,10 +7,13 @@ import xml.etree.ElementTree as ET
 root = Path(__file__).resolve().parents[1]
 failures: list[str] = []
 
+def is_generated(path: Path) -> bool:
+    return any(part in {'bin', 'obj', 'node_modules', 'dist', '.angular'} for part in path.relative_to(root).parts)
+
 required_files = [
     'CivicFlow.sln',
     'docker-compose.yml',
-    '.github/workflows/ci.yml',
+    'scripts/local_ci.ps1',
     'src/CivicFlow.Domain/CivicFlow.Domain.csproj',
     'src/CivicFlow.Application/CivicFlow.Application.csproj',
     'src/CivicFlow.Infrastructure/CivicFlow.Infrastructure.csproj',
@@ -76,5 +79,5 @@ if failures:
 
 print('STATIC VERIFICATION PASSED')
 print(f'Repository: {root}')
-print(f'C# files: {len(list(root.glob("**/*.cs")))}')
+print(f'C# files: {len([path for path in root.glob("**/*.cs") if not is_generated(path)])}')
 print(f'Documentation files: {len(list((root / "docs").glob("*.md")))}')

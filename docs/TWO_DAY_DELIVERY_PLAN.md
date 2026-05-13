@@ -14,7 +14,7 @@
 - Implement Data Integration Repair Center service and stored procedures.
 - Implement Angular dashboard and import repair UI.
 - Add import validation tests.
-- Add GitHub Actions CI.
+- Add local CI validation.
 - Complete incident case study and test plan.
 - Run build/test verification in a .NET 8 environment.
 

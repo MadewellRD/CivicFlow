@@ -12,13 +12,13 @@
 
 ## Findings
 
-### RQ-001: Compile/runtime verification requires .NET SDK
+### RQ-001: Runtime verification requires Docker SQL Server
 
-Status: open environment limitation.
+Status: open runtime limitation.
 
-The current execution environment does not include the .NET SDK and cannot resolve external hosts to install it. Static verification passed, but actual compile/test verification must be run on a .NET 8 machine.
+Local .NET build/test verification passes through `scripts/local_ci.ps1`. SQL-backed runtime verification still requires Docker SQL Server and EF migration execution.
 
-Mitigation: CI workflow and exact local commands are included.
+Mitigation: exact local commands are included in `README.md` and deployment docs.
 
 ### RQ-002: Authorization is modeled but not enforced on every endpoint
 

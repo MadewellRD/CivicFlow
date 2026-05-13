@@ -16,8 +16,25 @@ It is intentionally aligned to an enterprise application developer stack: ASP.NE
 - ASP.NET Core API endpoints for requests, workflow transitions, imports, reference data, health, and mock legacy lookup.
 - Angular UI scaffold for request dashboard and import repair center.
 - xUnit tests for workflow and import validation service behavior.
-- GitHub Actions CI definition.
+- Local CI validation script.
 - Architecture, API, database, runbook, test plan, and incident case-study documentation.
+
+## Local validation
+
+The project intentionally uses local CI/CD instead of GitHub Actions:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\local_ci.ps1
+```
+
+Equivalent commands:
+
+```bash
+dotnet restore CivicFlow.sln
+dotnet build CivicFlow.sln --configuration Release --no-restore
+dotnet test CivicFlow.sln --configuration Release --no-build
+python scripts/verify_static.py
+```
 
 ## Local run
 
@@ -61,4 +78,4 @@ npm start
 
 ## Verification note
 
-This package was generated in an environment without the .NET SDK and without internet access to install it. Static repository verification was run locally; compile/test commands are documented and ready for a .NET 8 environment.
+Backend tests and static repository verification are intended to run locally through `scripts/local_ci.ps1`.

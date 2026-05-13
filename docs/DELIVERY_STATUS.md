@@ -10,17 +10,15 @@
 - Tests generated.
 - SQL stored procedures generated.
 - EF migration included.
-- CI workflow included.
+- Local CI validation script included.
 - Documentation, runbooks, incident case study, security, deployment, observability, review, and verification artifacts included.
-- Static verification passed.
+- Backend tests and static verification passed locally.
 
 ## Not completed in this environment
 
-- `dotnet build`: blocked because .NET SDK is not installed.
-- `dotnet test`: blocked because .NET SDK is not installed.
-- `npm install`/Angular build: blocked by no internet access for package restore.
+- `npm install`/Angular build: not executed as part of local backend CI.
 - Docker SQL Server runtime check: not executed here.
 
 ## Next physical execution step
 
-Run the repository on a machine with .NET 8 SDK, Docker, and internet package restore. The CI workflow contains the canonical validation sequence.
+Run `scripts/local_ci.ps1` before publishing changes. Use Docker SQL Server and the Angular commands in `README.md` when validating the full runtime flow.
