@@ -8,7 +8,7 @@ root = Path(__file__).resolve().parents[1]
 failures: list[str] = []
 
 def is_generated(path: Path) -> bool:
-    return any(part in {'bin', 'obj', 'node_modules', 'dist', '.angular'} for part in path.relative_to(root).parts)
+    return any(part in {'bin', 'obj', 'node_modules', 'dist', '.angular', 'work'} for part in path.relative_to(root).parts)
 
 required_files = [
     'CivicFlow.sln',
