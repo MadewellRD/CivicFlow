@@ -1,0 +1,14 @@
+bin/
+obj/
+.vs/
+.vscode/
+TestResults/
+coverage/
+node_modules/
+dist/
+.angular/
+appsettings.Development.local.json
+AGENTS.md
+Agents.md
+*.user
+*.suo
