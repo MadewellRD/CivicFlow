@@ -61,6 +61,11 @@ for status in ['Draft', 'Submitted', 'Triage', 'AnalystReview', 'TechnicalReview
     if status not in workflow:
         failures.append(f'Workflow status missing: {status}')
 
+migration = (root / 'src/CivicFlow.Infrastructure/Migrations/20260513210000_InitialCreate.cs').read_text()
+for marker in ['DbContext(typeof(CivicFlowDbContext))', 'Migration("20260513210000_InitialCreate")']:
+    if marker not in migration:
+        failures.append(f'Migration metadata missing: {marker}')
+
 import_service = (root / 'src/CivicFlow.Application/Services/ImportValidationService.cs').read_text()
 for rule in ['AgencyCode', 'FundCode', 'FiscalYear', 'Amount', 'EffectiveDate']:
     if rule not in import_service:

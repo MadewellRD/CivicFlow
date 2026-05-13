@@ -1,9 +1,13 @@
+using CivicFlow.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace CivicFlow.Infrastructure.Migrations;
 
+[DbContext(typeof(CivicFlowDbContext))]
+[Migration("20260513210000_InitialCreate")]
 public partial class InitialCreate : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)
