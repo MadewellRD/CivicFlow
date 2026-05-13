@@ -24,4 +24,8 @@ export class CivicFlowApiService {
   createImportBatch(fileName: string, uploadedByUserId: string, rows: ImportRow[]): Observable<ImportBatchSummary> {
     return this.http.post<ImportBatchSummary>(`${this.baseUrl}/imports/budget-requests`, { fileName, uploadedByUserId, rows });
   }
+
+  transformImportBatch(batchId: string, actorUserId: string): Observable<ImportBatchSummary> {
+    return this.http.post<ImportBatchSummary>(`${this.baseUrl}/imports/${batchId}/transform`, { actorUserId });
+  }
 }

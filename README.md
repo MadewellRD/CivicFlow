@@ -10,9 +10,9 @@ It is intentionally aligned to an enterprise application developer stack: ASP.NE
 - Domain model for requests, users, groups, reference data, imports, audit logs, incidents, and notifications.
 - Request lifecycle state machine.
 - Request workflow service with audit and notification side effects.
-- Import validation service with duplicate, reference-data, fiscal-year, amount, and date checks.
+- Import validation and transform service with duplicate, reference-data, fiscal-year, amount, and date checks.
 - SQL Server EF Core infrastructure and repository implementations.
-- SQL stored procedures for import validation, import summary, and request aging report.
+- SQL stored procedures for import validation, import summary, import transform, and request aging report.
 - ASP.NET Core API endpoints for requests, workflow transitions, imports, reference data, health, and mock legacy lookup.
 - Angular UI scaffold for request dashboard and import repair center.
 - xUnit tests for workflow and import validation service behavior.

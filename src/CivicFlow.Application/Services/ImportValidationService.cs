@@ -1,20 +1,30 @@
 using CivicFlow.Application.Abstractions;
 using CivicFlow.Application.Dtos;
 using CivicFlow.Domain.Entities;
+using CivicFlow.Domain.Enums;
 
 namespace CivicFlow.Application.Services;
 
 public sealed class ImportValidationService
 {
     private readonly IImportRepository _imports;
+    private readonly IRequestRepository _requests;
     private readonly IReferenceDataProvider _referenceDataProvider;
     private readonly IAuditWriter _auditWriter;
+    private readonly IClock _clock;
 
-    public ImportValidationService(IImportRepository imports, IReferenceDataProvider referenceDataProvider, IAuditWriter auditWriter)
+    public ImportValidationService(
+        IImportRepository imports,
+        IRequestRepository requests,
+        IReferenceDataProvider referenceDataProvider,
+        IAuditWriter auditWriter,
+        IClock clock)
     {
         _imports = imports;
+        _requests = requests;
         _referenceDataProvider = referenceDataProvider;
         _auditWriter = auditWriter;
+        _clock = clock;
     }
 
     public async Task<ImportBatchSummaryDto> CreateAndValidateBatchAsync(
@@ -47,11 +57,75 @@ public sealed class ImportValidationService
 
     public async Task<ImportBatchSummaryDto> ValidateExistingBatchAsync(Guid batchId, CancellationToken cancellationToken)
     {
-        var batch = await _imports.GetBatchAsync(batchId, cancellationToken)
-            ?? throw new InvalidOperationException($"Import batch {batchId} was not found.");
+        var batch = await LoadBatchAsync(batchId, cancellationToken);
         await ValidateBatchAsync(batch, cancellationToken);
         await _imports.SaveChangesAsync(cancellationToken);
         return ImportBatchSummaryDto.FromEntity(batch);
+    }
+
+    public async Task<ImportBatchSummaryDto> GetBatchSummaryAsync(Guid batchId, CancellationToken cancellationToken)
+    {
+        var batch = await LoadBatchAsync(batchId, cancellationToken);
+        return ImportBatchSummaryDto.FromEntity(batch);
+    }
+
+    public async Task<ImportBatchSummaryDto> TransformBatchAsync(Guid batchId, Guid actorUserId, CancellationToken cancellationToken)
+    {
+        var batch = await LoadBatchAsync(batchId, cancellationToken);
+        var referenceData = await _referenceDataProvider.GetTransformSnapshotAsync(cancellationToken);
+        var requestNumbers = referenceData.ExistingRequestNumbers.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var transformedRows = 0;
+
+        foreach (var row in batch.Rows.Where(row => row.RowStatus == ImportRowStatus.Valid).OrderBy(row => row.RowNumber))
+        {
+            if (!TryResolveReferences(row, referenceData, out var agencyId, out var fundId, out var budgetProgramId))
+            {
+                continue;
+            }
+
+            if (!requestNumbers.Add(row.RequestNumber))
+            {
+                row.AddError("RequestNumber", "Request number already exists in CivicFlow.");
+                continue;
+            }
+
+            var request = new Request(
+                row.Title,
+                RequestCategory.FinanceDataCorrection,
+                agencyId,
+                actorUserId,
+                fundId,
+                budgetProgramId,
+                row.Amount,
+                $"Imported from batch {batch.Id}, row {row.RowNumber}.");
+
+            request.SetRequestNumber(row.RequestNumber);
+            request.TransitionTo(RequestStatus.Submitted, actorUserId, "Created from validated import row.", _clock.UtcNow);
+            await _requests.AddAsync(request, cancellationToken);
+            row.MarkTransformed();
+            transformedRows++;
+        }
+
+        if (transformedRows > 0)
+        {
+            batch.MarkTransformed();
+            await _auditWriter.WriteAsync(
+                actorUserId,
+                AuditActionType.ImportTransformed,
+                nameof(ImportBatch),
+                batch.Id,
+                $"Import batch transformed {transformedRows} valid rows into requests.",
+                cancellationToken);
+        }
+
+        await _imports.SaveChangesAsync(cancellationToken);
+        return ImportBatchSummaryDto.FromEntity(batch);
+    }
+
+    private async Task<ImportBatch> LoadBatchAsync(Guid batchId, CancellationToken cancellationToken)
+    {
+        return await _imports.GetBatchAsync(batchId, cancellationToken)
+            ?? throw new InvalidOperationException($"Import batch {batchId} was not found.");
     }
 
     private async Task ValidateBatchAsync(ImportBatch batch, CancellationToken cancellationToken)
@@ -74,7 +148,40 @@ public sealed class ImportValidationService
         }
 
         batch.MarkValidated();
-        await _auditWriter.WriteAsync(batch.CreatedByUserId, Domain.Enums.AuditActionType.ImportValidated, nameof(ImportBatch), batch.Id, "Import batch validated.", cancellationToken);
+        await _auditWriter.WriteAsync(batch.CreatedByUserId, AuditActionType.ImportValidated, nameof(ImportBatch), batch.Id, "Import batch validated.", cancellationToken);
+    }
+
+    private static bool TryResolveReferences(
+        ImportStagingRow row,
+        TransformReferenceDataSnapshot referenceData,
+        out Guid agencyId,
+        out Guid fundId,
+        out Guid budgetProgramId)
+    {
+        agencyId = Guid.Empty;
+        fundId = Guid.Empty;
+        budgetProgramId = Guid.Empty;
+
+        if (!referenceData.AgencyIdsByCode.TryGetValue(row.AgencyCode, out agencyId))
+        {
+            row.AddError("AgencyCode", "Agency code was not found or is inactive.");
+            return false;
+        }
+
+        if (!referenceData.FundIdsByCode.TryGetValue(row.FundCode, out fundId))
+        {
+            row.AddError("FundCode", "Fund code was not found or is inactive.");
+            return false;
+        }
+
+        var programKey = TransformReferenceDataSnapshot.ProgramKey(agencyId, row.ProgramCode);
+        if (!referenceData.ProgramIdsByAgencyAndCode.TryGetValue(programKey, out budgetProgramId))
+        {
+            row.AddError("ProgramCode", "Budget program code was not found or is inactive for the agency.");
+            return false;
+        }
+
+        return true;
     }
 
     private static void ValidateRow(ImportStagingRow row, ReferenceDataSnapshot referenceData, IReadOnlySet<string> duplicateNumbers)

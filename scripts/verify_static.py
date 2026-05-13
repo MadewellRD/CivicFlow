@@ -26,6 +26,7 @@ required_files = [
     'src/CivicFlow.Infrastructure/Persistence/CivicFlowDbContext.cs',
     'src/CivicFlow.Api/Program.cs',
     'database/stored-procedures/001_validate_import_batch.sql',
+    'database/stored-procedures/004_transform_valid_import_rows.sql',
     'frontend/civicflow-web/package.json',
     'docs/ARCHITECTURE.md',
     'docs/API_CONTRACT.md',
@@ -52,7 +53,7 @@ for json_file in [root / 'global.json', root / 'frontend/civicflow-web/package.j
         failures.append(f'Invalid JSON in {json_file.relative_to(root)}: {exc}')
 
 program = (root / 'src/CivicFlow.Api/Program.cs').read_text()
-for endpoint in ['/api', '/requests', '/imports/budget-requests', '/health', '/integrations/legacy-budget']:
+for endpoint in ['/api', '/requests', '/imports/budget-requests', '/imports/{id:guid}/transform', '/health', '/integrations/legacy-budget']:
     if endpoint not in program:
         failures.append(f'Expected endpoint marker not found in Program.cs: {endpoint}')
 
@@ -67,12 +68,12 @@ for marker in ['DbContext(typeof(CivicFlowDbContext))', 'Migration("202605132100
         failures.append(f'Migration metadata missing: {marker}')
 
 import_service = (root / 'src/CivicFlow.Application/Services/ImportValidationService.cs').read_text()
-for rule in ['AgencyCode', 'FundCode', 'FiscalYear', 'Amount', 'EffectiveDate']:
+for rule in ['AgencyCode', 'FundCode', 'FiscalYear', 'Amount', 'EffectiveDate', 'TransformBatchAsync']:
     if rule not in import_service:
         failures.append(f'Import validation rule missing: {rule}')
 
 tests = '\n'.join(path.read_text() for path in (root / 'tests').glob('**/*.cs'))
-for assertion in ['InvalidTransitionThrowsDomainException', 'InvalidImportRowIsRejectedWithFieldErrors', 'ValidImportRowIsAccepted']:
+for assertion in ['InvalidTransitionThrowsDomainException', 'InvalidImportRowIsRejectedWithFieldErrors', 'ValidImportRowIsAccepted', 'TransformBatchCreatesSubmittedRequestAndMarksRowTransformed']:
     if assertion not in tests:
         failures.append(f'Expected test missing: {assertion}')
 

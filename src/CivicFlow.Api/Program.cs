@@ -4,12 +4,17 @@ using CivicFlow.Application.Services;
 using CivicFlow.Infrastructure;
 using CivicFlow.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplicationServices();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHealthChecks().AddDbContextCheck<CivicFlowDbContext>("sqlserver");
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("DevelopmentUi", policy => policy.AllowAnyHeader().AllowAnyMethod().WithOrigins("http://localhost:4200"));
@@ -84,9 +89,25 @@ api.MapPost("/imports/budget-requests", async (CreateImportBatchRequest request,
     return Results.Created($"/api/imports/{summary.Id}", summary);
 });
 
+api.MapGet("/imports/{id:guid}", async (Guid id, ImportValidationService service, CancellationToken cancellationToken) =>
+{
+    return Results.Ok(await service.GetBatchSummaryAsync(id, cancellationToken));
+});
+
+api.MapGet("/imports/{id:guid}/errors", async (Guid id, ImportValidationService service, CancellationToken cancellationToken) =>
+{
+    var summary = await service.GetBatchSummaryAsync(id, cancellationToken);
+    return Results.Ok(summary.Rows.Where(row => row.Errors.Any()).ToArray());
+});
+
 api.MapPost("/imports/{id:guid}/validate", async (Guid id, ImportValidationService service, CancellationToken cancellationToken) =>
 {
     return Results.Ok(await service.ValidateExistingBatchAsync(id, cancellationToken));
+});
+
+api.MapPost("/imports/{id:guid}/transform", async (Guid id, TransformImportBody body, ImportValidationService service, CancellationToken cancellationToken) =>
+{
+    return Results.Ok(await service.TransformBatchAsync(id, body.ActorUserId, cancellationToken));
 });
 
 api.MapGet("/reference/agencies", async (CivicFlowDbContext db, CancellationToken cancellationToken) =>
@@ -109,4 +130,5 @@ app.Run();
 
 public sealed record RejectRequestBody(Guid ActorUserId, string Reason);
 public sealed record CreateImportBatchRequest(string FileName, Guid UploadedByUserId, IReadOnlyCollection<ImportRowDto> Rows);
+public sealed record TransformImportBody(Guid ActorUserId);
 public sealed record LegacyBudgetLookupResponse(string AgencyCode, string FundCode, string Status, DateTimeOffset CheckedAt);

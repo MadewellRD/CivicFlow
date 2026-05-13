@@ -44,7 +44,7 @@ Out of scope for v1:
 
 Request creation enters through Angular or API, passes through RequestWorkflowService, persists through RequestRepository and CivicFlowDbContext, writes AuditLog, and enqueues NotificationMessage.
 
-Import creation accepts staged rows, validates against reference data and duplicate constraints, writes row-level validation errors, and returns a summary for repair.
+Import creation accepts staged rows, validates against reference data and duplicate constraints, writes row-level validation errors, and returns a summary for repair. Transform turns valid rows into submitted CivicFlow requests, marks staging rows transformed, and writes audit history.
 
 ## Security considerations
 
@@ -59,4 +59,5 @@ Import creation accepts staged rows, validates against reference data and duplic
 - Domain transition tests prove allowed and forbidden lifecycle paths.
 - Application service tests prove audit and notification side effects.
 - Import validation tests prove accepted/rejected row behavior.
+- Import transform tests prove valid rows create submitted requests.
 - API integration tests should be added after the first successful database migration.

@@ -34,6 +34,17 @@ Check:
 
 Use `dbo.GetImportBatchSummary` for a database-level summary.
 
+## Import batch will not transform valid rows
+
+Check:
+
+- Batch has rows with `RowStatus = 'Valid'`.
+- Agency, fund, and budget program codes still exist and are active.
+- Request numbers do not already exist in CivicFlow.
+- API actor user ID is a valid seeded or future authenticated user.
+
+Use `POST /api/imports/{id}/transform` for application-level transform so audit and request history are preserved. Use `dbo.TransformValidImportRows` only for database-level support diagnostics or controlled maintenance.
+
 ## Request is stuck in workflow
 
 Review allowed transitions in `RequestWorkflow.cs`. Do not update status directly in SQL unless recovering a non-production demo database. Use the API workflow endpoints so audit history is preserved.

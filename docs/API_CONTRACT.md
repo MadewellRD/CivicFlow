@@ -40,7 +40,21 @@ Workflow endpoints:
 
 `POST /imports/budget-requests` creates and validates an import batch.
 
+`GET /imports/{id}` returns an import batch summary.
+
+`GET /imports/{id}/errors` returns rejected rows for an import batch.
+
 `POST /imports/{id}/validate` revalidates an existing batch.
+
+`POST /imports/{id}/transform` creates submitted CivicFlow requests from valid import rows and marks those rows transformed.
+
+Request body:
+
+```json
+{
+  "actorUserId": "10000000-0000-0000-0000-000000000001"
+}
+```
 
 ## Reference data
 

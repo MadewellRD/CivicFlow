@@ -18,6 +18,7 @@ import { ImportBatchSummary, ImportRow } from './models';
     <section class="card" *ngIf="summary">
       <h2>{{ summary.fileName }} - {{ summary.status }}</h2>
       <p>Total: {{ summary.totalRows }} | Accepted: {{ summary.acceptedRows }} | Rejected: {{ summary.rejectedRows }}</p>
+      <button type="button" (click)="transform()" [disabled]="summary.acceptedRows === 0 || summary.status === 'Transformed'">Transform valid rows</button>
       <article class="card" *ngFor="let row of summary.rows">
         <strong>Row {{ row.rowNumber }} - {{ row.requestNumber }}</strong>
         <span class="status">{{ row.status }}</span>
@@ -33,6 +34,11 @@ export class ImportRepairCenterComponent {
   summary?: ImportBatchSummary;
 
   constructor(private readonly api: CivicFlowApiService) {}
+
+  transform(): void {
+    if (!this.summary) return;
+    this.api.transformImportBatch(this.summary.id, this.demoRequesterId).subscribe(summary => this.summary = summary);
+  }
 
   runSampleImport(): void {
     const rows: ImportRow[] = [
