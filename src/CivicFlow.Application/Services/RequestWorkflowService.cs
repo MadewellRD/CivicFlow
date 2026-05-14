@@ -1,5 +1,6 @@
 using CivicFlow.Application.Abstractions;
 using CivicFlow.Application.Dtos;
+using CivicFlow.Application.Platform;
 using CivicFlow.Domain.Common;
 using CivicFlow.Domain.Entities;
 using CivicFlow.Domain.Enums;
@@ -12,17 +13,20 @@ public sealed class RequestWorkflowService
     private readonly IAuditWriter _auditWriter;
     private readonly INotificationService _notificationService;
     private readonly IClock _clock;
+    private readonly BusinessRuleEngine _businessRuleEngine;
 
     public RequestWorkflowService(
         IRequestRepository requests,
         IAuditWriter auditWriter,
         INotificationService notificationService,
-        IClock clock)
+        IClock clock,
+        BusinessRuleEngine businessRuleEngine)
     {
         _requests = requests;
         _auditWriter = auditWriter;
         _notificationService = notificationService;
         _clock = clock;
+        _businessRuleEngine = businessRuleEngine;
     }
 
     public async Task<RequestDto> CreateAsync(CreateRequestDto dto, CancellationToken cancellationToken)
@@ -39,9 +43,22 @@ public sealed class RequestWorkflowService
 
         request.SetRequestNumber($"CF-{_clock.UtcNow:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpperInvariant()}");
 
+        // Before-phase rules can still inspect or mutate the entity before persistence.
+        await _businessRuleEngine.RunPhaseAsync(
+            BusinessRulePhase.Before,
+            new BusinessRuleContext(BusinessRuleTable.Request, BusinessRuleTrigger.Inserted, dto.RequesterId, request, null),
+            cancellationToken);
+
         await _requests.AddAsync(request, cancellationToken);
         await _auditWriter.WriteAsync(dto.RequesterId, AuditActionType.Created, nameof(Request), request.Id, "Request created.", cancellationToken);
         await _requests.SaveChangesAsync(cancellationToken);
+
+        // Async-phase rules can fire-and-forget side effects after the commit.
+        await _businessRuleEngine.RunPhaseAsync(
+            BusinessRulePhase.Async,
+            new BusinessRuleContext(BusinessRuleTable.Request, BusinessRuleTrigger.Inserted, dto.RequesterId, request, null),
+            cancellationToken);
+
         return RequestDto.FromEntity(request);
     }
 
@@ -111,6 +128,14 @@ public sealed class RequestWorkflowService
             cancellationToken);
         await _notificationService.EnqueueAsync(request.RequesterId, $"CivicFlow request {request.RequestNumber} updated", $"Status changed to {nextStatus}.", cancellationToken);
         await _requests.SaveChangesAsync(cancellationToken);
+
+        // After-phase rules see the committed state. Run them post-save so a rule that
+        // reads from the audit log or notification queue can observe the change.
+        await _businessRuleEngine.RunPhaseAsync(
+            BusinessRulePhase.After,
+            new BusinessRuleContext(BusinessRuleTable.Request, BusinessRuleTrigger.StatusChanged, actorUserId, request, null),
+            cancellationToken);
+
         return RequestDto.FromEntity(request);
     }
 

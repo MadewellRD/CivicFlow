@@ -1,9 +1,11 @@
 using CivicFlow.Application.Abstractions;
 using CivicFlow.Application.Dtos;
+using CivicFlow.Application.Platform;
 using CivicFlow.Application.Services;
 using CivicFlow.Domain.Common;
 using CivicFlow.Domain.Entities;
 using CivicFlow.Domain.Enums;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace CivicFlow.Tests;
@@ -25,7 +27,7 @@ public sealed class WorkflowTests
         var repository = new FakeRequestRepository();
         var audit = new FakeAuditWriter();
         var notifications = new FakeNotificationService();
-        var service = new RequestWorkflowService(repository, audit, notifications, new FixedClock());
+        var service = new RequestWorkflowService(repository, audit, notifications, new FixedClock(), NoRulesEngine(audit));
 
         var created = await service.CreateAsync(new CreateRequestDto(
             "Budget data correction",
@@ -50,7 +52,8 @@ public sealed class WorkflowTests
         var actorId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
         var agencyId = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000001");
         var repository = new FakeRequestRepository();
-        var service = new RequestWorkflowService(repository, new FakeAuditWriter(), new FakeNotificationService(), new FixedClock());
+        var audit = new FakeAuditWriter();
+        var service = new RequestWorkflowService(repository, audit, new FakeNotificationService(), new FixedClock(), NoRulesEngine(audit));
         var created = await service.CreateAsync(new CreateRequestDto(
             "Budget request",
             RequestCategory.BudgetChange,
@@ -63,6 +66,63 @@ public sealed class WorkflowTests
 
         await Assert.ThrowsAsync<DomainException>(() => service.ApproveAsync(created.Id, actorId, CancellationToken.None));
     }
+
+    [Fact]
+    public async Task OversightThresholdBusinessRuleFiresOnLargeRequestSubmit()
+    {
+        var actorId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
+        var agencyId = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000001");
+        var repository = new FakeRequestRepository();
+        var audit = new FakeAuditWriter();
+        var engine = new BusinessRuleEngine(
+            new IBusinessRule[] { new OversightThresholdBusinessRule(), new LegacyIntegrationTagBusinessRule() },
+            audit,
+            NullLogger<BusinessRuleEngine>.Instance);
+        var service = new RequestWorkflowService(repository, audit, new FakeNotificationService(), new FixedClock(), engine);
+
+        var created = await service.CreateAsync(new CreateRequestDto(
+            "DSHS caseload growth supplemental",
+            RequestCategory.BudgetChange,
+            agencyId,
+            actorId,
+            null,
+            null,
+            2_900_000m,
+            "Caseload exceeds baseline; supplemental authorization needed."), CancellationToken.None);
+
+        await service.SubmitAsync(created.Id, actorId, CancellationToken.None);
+
+        Assert.Contains(audit.Summaries, s => s.Contains("Oversight threshold flag"));
+    }
+
+    [Fact]
+    public async Task LegacyIntegrationTagFiresOnInsertForLegacyCategory()
+    {
+        var actorId = Guid.Parse("aaaaaaaa-0000-0000-0000-000000000001");
+        var agencyId = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000001");
+        var repository = new FakeRequestRepository();
+        var audit = new FakeAuditWriter();
+        var engine = new BusinessRuleEngine(
+            new IBusinessRule[] { new OversightThresholdBusinessRule(), new LegacyIntegrationTagBusinessRule() },
+            audit,
+            NullLogger<BusinessRuleEngine>.Instance);
+        var service = new RequestWorkflowService(repository, audit, new FakeNotificationService(), new FixedClock(), engine);
+
+        await service.CreateAsync(new CreateRequestDto(
+            "Reconcile legacy AFRS export",
+            RequestCategory.LegacyIntegrationIssue,
+            agencyId,
+            actorId,
+            null,
+            null,
+            0m,
+            "Stuck records in the legacy outbound queue need re-export."), CancellationToken.None);
+
+        Assert.Contains(audit.Summaries, s => s.Contains("Legacy integration triage tag"));
+    }
+
+    private static BusinessRuleEngine NoRulesEngine(IAuditWriter audit) =>
+        new(Array.Empty<IBusinessRule>(), audit, NullLogger<BusinessRuleEngine>.Instance);
 
     private sealed class FakeRequestRepository : IRequestRepository
     {

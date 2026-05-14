@@ -43,3 +43,69 @@ export interface ImportBatchSummary {
   rejectedRows: number;
   rows: Array<{ rowNumber: number; requestNumber: string; status: string; errors: string[] }>;
 }
+
+export interface RosterUser {
+  id: string;
+  displayName: string;
+  email: string;
+  primaryRole: string;
+}
+
+export interface CurrentUser {
+  userId: string;
+  displayName: string;
+  role: string;
+}
+
+export interface FieldGuidance {
+  field: string;
+  problem: string;
+  fix: string;
+}
+
+export interface ImportErrorExplanation {
+  rowNumber: number;
+  summary: string;
+  fieldGuidance: FieldGuidance[];
+  agencyMessage: string;
+  confidence: string;
+  providerName: string;
+  servedFromMock: boolean;
+  servedFromKillSwitch: boolean;
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostUsd: number;
+  latencyMs: number;
+}
+
+export interface ImportErrorExplanationBatch {
+  batchId: string;
+  fileName: string;
+  explanations: ImportErrorExplanation[];
+  rowsExplained: number;
+  rowsSkipped: number;
+  totalEstimatedCostUsd: number;
+}
+
+export interface SimilarPastRequest {
+  requestNumber: string;
+  title: string;
+  similarityScore: number;
+}
+
+export interface TriageRecommendation {
+  requestId: string;
+  recommendedQueue: string;
+  complexity: string;
+  humanReviewRequired: boolean;
+  rationale: string;
+  similarPastRequests: SimilarPastRequest[];
+  confidence: string;
+  providerName: string;
+  servedFromMock: boolean;
+  servedFromKillSwitch: boolean;
+  inputTokens: number;
+  outputTokens: number;
+  estimatedCostUsd: number;
+  latencyMs: number;
+}

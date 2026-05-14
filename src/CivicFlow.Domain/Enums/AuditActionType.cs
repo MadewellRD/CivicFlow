@@ -9,5 +9,8 @@ public enum AuditActionType
     CommentAdded = 4,
     ImportValidated = 5,
     ImportTransformed = 6,
-    IncidentRecorded = 7
+    IncidentRecorded = 7,
+    AiExplanationGenerated = 8,
+    AiTriageGenerated = 9,
+    BusinessRuleExecuted = 10
 }

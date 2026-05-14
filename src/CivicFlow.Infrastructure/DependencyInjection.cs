@@ -1,6 +1,9 @@
 using CivicFlow.Application.Abstractions;
+using CivicFlow.Application.Ai;
 using CivicFlow.Infrastructure.Persistence;
 using CivicFlow.Infrastructure.Repositories;
+using CivicFlow.Infrastructure.Seeding;
+using CivicFlow.Infrastructure.Ai;
 using CivicFlow.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -21,6 +24,8 @@ public static class DependencyInjection
         services.AddScoped<IReferenceDataProvider, EfReferenceDataProvider>();
         services.AddScoped<IAuditWriter, EfAuditWriter>();
         services.AddScoped<INotificationService, EfNotificationService>();
+        services.AddCivicFlowAi(configuration);
+        services.AddScoped<DemoDataSeeder>();
         return services;
     }
 }

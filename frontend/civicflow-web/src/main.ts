@@ -1,10 +1,11 @@
 import 'zone.js';
 import { bootstrapApplication } from '@angular/platform-browser';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideRouter, Routes } from '@angular/router';
 import { AppComponent } from './app/app.component';
 import { RequestDashboardComponent } from './app/request-dashboard.component';
 import { ImportRepairCenterComponent } from './app/import-repair-center.component';
+import { civicFlowAuthInterceptor } from './app/auth.interceptor';
 
 const routes: Routes = [
   { path: '', component: RequestDashboardComponent },
@@ -12,5 +13,8 @@ const routes: Routes = [
 ];
 
 bootstrapApplication(AppComponent, {
-  providers: [provideHttpClient(), provideRouter(routes)]
+  providers: [
+    provideHttpClient(withInterceptors([civicFlowAuthInterceptor])),
+    provideRouter(routes)
+  ]
 }).catch(error => console.error(error));
