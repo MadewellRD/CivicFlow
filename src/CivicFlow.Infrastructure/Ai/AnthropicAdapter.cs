@@ -65,7 +65,7 @@ public sealed class AnthropicAdapter : IModelAdapter
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, $"{settings.AnthropicBaseUrl.TrimEnd('/')}/v1/messages")
         {
-            Content = JsonContent.Create(payload, options: SerializerOptions)
+            Content = JsonContent.Create(payload, options: AnthropicApiSerializerOptions)
         };
         httpRequest.Headers.Add("x-api-key", settings.AnthropicApiKey);
         httpRequest.Headers.Add("anthropic-version", ApiVersion);
@@ -87,7 +87,7 @@ public sealed class AnthropicAdapter : IModelAdapter
                     BuildTelemetry(settings, 0, 0, stopwatch.Elapsed));
             }
 
-            var parsed = JsonSerializer.Deserialize<AnthropicResponse>(body, SerializerOptions);
+            var parsed = JsonSerializer.Deserialize<AnthropicResponse>(body, AnthropicApiSerializerOptions);
             if (parsed is null || parsed.Content is null || parsed.Content.Length == 0)
             {
                 return ModelResponse<TResult>.Failure(
@@ -106,7 +106,7 @@ public sealed class AnthropicAdapter : IModelAdapter
             }
 
             var json = text.Substring(firstBrace, lastBrace - firstBrace + 1);
-            var value = JsonSerializer.Deserialize<TResult>(json, SerializerOptions);
+            var value = JsonSerializer.Deserialize<TResult>(json, ModelOutputSerializerOptions);
 
             if (value is null)
             {
@@ -145,11 +145,16 @@ public sealed class AnthropicAdapter : IModelAdapter
             ServedFromMock: false);
     }
 
-    private static readonly JsonSerializerOptions SerializerOptions = new()
+    private static readonly JsonSerializerOptions AnthropicApiSerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
         PropertyNameCaseInsensitive = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+    };
+
+    private static readonly JsonSerializerOptions ModelOutputSerializerOptions = new(JsonSerializerDefaults.Web)
+    {
+        PropertyNameCaseInsensitive = true
     };
 
     private sealed record AnthropicRequest(

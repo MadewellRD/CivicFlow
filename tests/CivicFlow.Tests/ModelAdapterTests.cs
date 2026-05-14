@@ -1,3 +1,5 @@
+using System.Net;
+using System.Text;
 using CivicFlow.Application.Ai;
 using CivicFlow.Infrastructure.Ai;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -78,6 +80,45 @@ public sealed class ModelAdapterTests
         Assert.Throws<InvalidOperationException>(() => registry.GetSchema("does-not-exist"));
     }
 
+    [Fact]
+    public async Task AnthropicDeserializesCamelCaseModelPayload()
+    {
+        var handler = new RecordingAnthropicHandler("""
+        {
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"recommendedQueue\":\"Budget Operations\",\"humanReviewRequired\":true}"
+            }
+          ],
+          "usage": {
+            "input_tokens": 20,
+            "output_tokens": 5
+          }
+        }
+        """);
+        using var http = new HttpClient(handler);
+        var adapter = new AnthropicAdapter(
+            http,
+            MakeMonitor(new AiOptions
+            {
+                AnthropicApiKey = "test-key",
+                AnthropicModel = "claude-haiku-4-5-20251001"
+            }),
+            NullLogger<AnthropicAdapter>.Instance);
+
+        var response = await adapter.InvokeAsync(
+            new ModelRequest<AnthropicTriagePayload>("triage-router", "system", "user", "{}"),
+            CancellationToken.None);
+
+        Assert.True(response.Succeeded, response.FailureReason);
+        Assert.Equal("Budget Operations", response.Value!.RecommendedQueue);
+        Assert.True(response.Value.HumanReviewRequired);
+        Assert.Equal("claude-haiku-4-5-20251001", response.Telemetry.ModelName);
+        Assert.Contains("\"max_tokens\"", handler.RequestBody);
+        Assert.DoesNotContain("\"MaxTokens\"", handler.RequestBody);
+    }
+
     private static ModelRequest<ImportExplainerPayload> MakeRequest() =>
         new("import-error-explainer", "sys", "user", "{}");
 
@@ -118,5 +159,35 @@ public sealed class ModelAdapterTests
         public string Field { get; set; } = string.Empty;
         public string Problem { get; set; } = string.Empty;
         public string Fix { get; set; } = string.Empty;
+    }
+
+    public sealed class AnthropicTriagePayload
+    {
+        public string RecommendedQueue { get; set; } = string.Empty;
+        public bool HumanReviewRequired { get; set; }
+    }
+
+    private sealed class RecordingAnthropicHandler : HttpMessageHandler
+    {
+        private readonly string _responseBody;
+
+        public RecordingAnthropicHandler(string responseBody)
+        {
+            _responseBody = responseBody;
+        }
+
+        public string RequestBody { get; private set; } = string.Empty;
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            RequestBody = request.Content is null
+                ? string.Empty
+                : await request.Content.ReadAsStringAsync(cancellationToken);
+
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(_responseBody, Encoding.UTF8, "application/json")
+            };
+        }
     }
 }

@@ -39,7 +39,10 @@ public sealed class PromptSchemaRegistry : IPromptSchemaRegistry
           "type": "object",
           "required": ["recommendedQueue", "complexity", "humanReviewRequired", "rationale", "similarPastRequests", "confidence"],
           "properties": {
-            "recommendedQueue": { "type": "string" },
+            "recommendedQueue": {
+              "type": "string",
+              "enum": ["Budget Operations", "HR Funding", "Application Development", "Data Integration", "Audit and Compliance"]
+            },
             "complexity": { "type": "string", "enum": ["low", "medium", "high"] },
             "humanReviewRequired": { "type": "boolean" },
             "rationale": { "type": "string" },
