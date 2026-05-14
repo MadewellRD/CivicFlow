@@ -19,3 +19,14 @@ public sealed class RequestConfiguration : IEntityTypeConfiguration<Request>
         builder.Property(request => request.EstimatedAmount).HasPrecision(18, 2);
     }
 }
+
+public sealed class RequestStatusHistoryConfiguration : IEntityTypeConfiguration<RequestStatusHistory>
+{
+    public void Configure(EntityTypeBuilder<RequestStatusHistory> builder)
+    {
+        builder.ToTable("RequestStatusHistory");
+        builder.HasKey(history => history.Id);
+        builder.Property(history => history.Status).HasConversion<string>().HasMaxLength(40).IsRequired();
+        builder.Property(history => history.Reason).HasMaxLength(1000).IsRequired();
+    }
+}
