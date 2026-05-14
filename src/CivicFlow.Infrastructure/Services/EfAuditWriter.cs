@@ -17,5 +17,6 @@ public sealed class EfAuditWriter : IAuditWriter
     public async Task WriteAsync(Guid actorUserId, AuditActionType actionType, string entityName, Guid entityId, string summary, CancellationToken cancellationToken)
     {
         await _dbContext.AuditLogs.AddAsync(new AuditLog(actorUserId, actionType, entityName, entityId, summary, null, null), cancellationToken);
+        await _dbContext.SaveChangesAsync(cancellationToken);
     }
 }

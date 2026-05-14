@@ -78,6 +78,7 @@ public sealed class TriageRouterServiceTests
         Assert.True(rec.HumanReviewRequired);
         Assert.Equal("low", rec.Confidence);
         Assert.Equal("Budget Operations", rec.RecommendedQueue);
+        Assert.Contains(audit.Summaries, s => s.Contains("Triage fallback generated"));
     }
 
     private sealed class SingleRequestRepository : IRequestRepository

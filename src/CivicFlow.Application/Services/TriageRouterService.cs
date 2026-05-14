@@ -62,7 +62,16 @@ public sealed class TriageRouterService
 
         if (!response.Succeeded || response.Value is null)
         {
-            return BuildFailureRecommendation(request, response);
+            var fallback = BuildFailureRecommendation(request, response);
+            await _auditWriter.WriteAsync(
+                actorUserId,
+                AuditActionType.AiTriageGenerated,
+                nameof(Request),
+                request.Id,
+                $"Triage fallback generated: queue='{fallback.RecommendedQueue}', kill_switch={fallback.ServedFromKillSwitch}, confidence='{fallback.Confidence}', reason='{response.FailureReason}'.",
+                cancellationToken);
+
+            return fallback;
         }
 
         await _auditWriter.WriteAsync(
