@@ -5,6 +5,7 @@
 #
 # Required env vars (use a .env next to this file or set in the host shell):
 #   ANTHROPIC_API_KEY            real model key; omit to keep Mock provider
+#   ANTHROPIC_MODEL              Anthropic model id (default: claude-haiku-4-5-20251001)
 #   AI_PROVIDER                  "Anthropic" or "Mock" (default: Mock)
 #   AI_KILL_SWITCH_ENGAGED       "true" / "false" (default: false)
 #   SQL_SA_PASSWORD              SQL Server sa password (default: see .env.example)
@@ -44,6 +45,7 @@ services:
       Ai__Provider: "${AI_PROVIDER:-Mock}"
       Ai__KillSwitchEngaged: "${AI_KILL_SWITCH_ENGAGED:-false}"
       Ai__AnthropicApiKey: "${ANTHROPIC_API_KEY:-}"
+      Ai__AnthropicModel: "${ANTHROPIC_MODEL:-claude-haiku-4-5-20251001}"
     ports:
       - "5000:8080"
     healthcheck:
