@@ -1,49 +1,68 @@
 # Verification Report
 
-## Verification scope
+## Scope
 
-This report covers the generated CivicFlow package as delivered in this artifact.
+Final dress-rehearsal verification of CivicFlow as of 2026-05-14, the day before the OFM interview.
 
 ## Commands attempted
 
 | Command | Result | Notes |
 |---|---|---|
-| `dotnet --info` | passed | .NET SDK 8.x available |
-| `dotnet test CivicFlow.sln --configuration Release` | passed | 5 xUnit tests passed |
-| `python scripts\verify_static.py` | passed | Validated required files, project XML, JSON config, endpoint markers, workflow statuses, import validation rules, and test names |
+| `dotnet --info` | passed | .NET SDK 8.0.421 |
+| `dotnet restore CivicFlow.sln` | passed | All 5 projects restored |
+| `dotnet build CivicFlow.sln --configuration Release` | passed | **0 warnings, 0 errors** |
+| `dotnet test CivicFlow.sln --configuration Release --no-build` | passed | **29 / 29 tests passing** |
+| `npx ng build` (frontend/civicflow-web) | passed | 326 KB main bundle, 87 KB transferred |
+| `python scripts/verify_static.py` | not re-run | Static layout unchanged since previous pass |
+| Docker build (API) | not run in sandbox | Dockerfile reviewed manually; multi-stage, non-root, healthcheck |
+| Docker build (Web) | not run in sandbox | Multi-stage Node → nginx; nginx config reverse-proxies /api |
+| Docker compose up (full stack) | not run in sandbox | Hosted demo deploys this; instructions in README + .env.example |
 
-## Static verification evidence
+## Test inventory (29 tests, all passing)
 
-`STATIC VERIFICATION PASSED`
-
-Repository metrics at verification time:
-
-- C# files: 57
-- TypeScript files: 6
-- Markdown files: 11+
-- Required project files present.
-- Required docs present.
-- Required endpoint markers present.
-- Required workflow states present.
-- Required import validation rules present.
-- Required tests present.
+- WorkflowTests (5): DraftRequestCanMoveToSubmittedButNotApproved, SubmitRequestWritesAuditAndNotification, InvalidTransitionThrowsDomainException, OversightThresholdBusinessRuleFiresOnLargeRequestSubmit, LegacyIntegrationTagFiresOnInsertForLegacyCategory.
+- ImportValidationTests (3): ValidImportRowIsAccepted, InvalidImportRowIsRejectedWithFieldErrors, TransformBatchCreatesSubmittedRequestAndMarksRowTransformed.
+- AuthPolicyTests (13): role-to-policy matrix coverage + anonymous-user rejection.
+- ModelAdapterTests (5): kill-switch short-circuit, mock determinism, mock fail-clean, schema registry hit/miss.
+- ImportErrorExplainerServiceTests (1): explains only rejected rows, ignores valid, audit entry recorded.
+- TriageRouterServiceTests (2): mock end-to-end, kill-switch safe-default path.
 
 ## Acceptance criteria traceability
 
 | Requirement | Evidence | Status |
 |---|---|---|
-| .NET 8 backend | `src/CivicFlow.Api`, `src/CivicFlow.Application`, `src/CivicFlow.Domain`, `src/CivicFlow.Infrastructure` | implemented, compile pending |
-| SQL backend | SQL Server connection string, Docker Compose, EF Core DbContext, migration, stored procedures | implemented, runtime pending |
-| EF Core | Infrastructure project references and DbContext/repositories | implemented, compile pending |
-| T-SQL/stored procedures | `database/stored-procedures` | implemented |
-| Request workflow | `RequestWorkflow.cs`, `RequestWorkflowService.cs` | implemented |
-| Audit logging | `AuditLog`, `EfAuditWriter`, workflow service calls | implemented |
-| Data import repair | `ImportValidationService`, import entities, import UI, stored procedure | implemented |
-| Angular UI | `frontend/civicflow-web` | implemented, npm install/build pending |
-| Tests | xUnit workflow and import validation tests | implemented, passing locally |
-| Local CI | `scripts/local_ci.ps1` | implemented |
-| Docs/runbook | `docs/*.md` | implemented |
+| .NET 8 backend | `src/CivicFlow.Api`, `Application`, `Infrastructure`, `Domain` | implemented, builds clean |
+| SQL Server backend | SQL Server 2022 in docker-compose, EF Core 8 DbContext, initial migration | implemented |
+| EF Core | DbContext, repositories, migrations folder | implemented |
+| T-SQL stored procedures | `database/stored-procedures/{001,002,003}_*.sql` | implemented |
+| Request workflow state machine | `RequestWorkflow.cs`, `RequestWorkflowService.cs` | implemented, 5 tests |
+| Audit logging | `AuditLog` entity, `EfAuditWriter`, called from workflow + AI services + business rules | implemented |
+| Data import repair | `ImportValidationService`, `ImportErrorExplainerService`, Angular Import Repair Center | implemented |
+| Angular UI | `frontend/civicflow-web` | implemented, builds clean |
+| Role-based authz | `AuthRegistration`, 11 policies, every endpoint gated | implemented, 13 tests |
+| AI features | Import Error Explainer + Triage Router | implemented, 3 tests |
+| ServiceNow-shape platform | `Platform/IBusinessRule`, `BusinessRuleEngine`, two concrete rules, `ITransformMap`, `UiPolicyCatalog` | implemented, 2 tests |
+| Demo seeder | `Infrastructure/Seeding/DemoDataSeeder.cs`, runs on startup | implemented |
+| Health/readyz endpoints | `/health`, `/readyz`, DbContext check | implemented |
+| Docker artifacts | `Dockerfile`, `frontend/civicflow-web/Dockerfile`, `docker-compose.demo.yml`, `nginx.conf`, `.env.example` | implemented |
+| Slide deck | `docs/CivicFlow.pptx` (12 slides, themed) | implemented |
+| Demo script | `docs/DEMO_SCRIPT.md` (5-7 minute walkthrough) | implemented |
+| STAR cheat sheet | `docs/STAR_TALKING_POINTS.md` | implemented |
+| README + ONE_PAGER | `README.md`, `docs/ONE_PAGER.md` | implemented |
+
+## Known follow-ups (called out explicitly, slide 11)
+
+- Replace demo auth handler with real Entra ID OIDC. Policy table is portable.
+- Regenerate EF migration on a clean machine so the model snapshot is populated (today: raw-SQL Up() works, snapshot is empty).
+- OpenTelemetry traces and structured-log correlation IDs through the AI adapter pipeline.
+- Real ServiceNow connector adapter that round-trips a CivicFlow Request to a SN incident.
+- Karma + Cypress smoke tests for the SPA; axe-core baseline.
+- Embeddings-backed retrieval for the triage router instead of same-category recency.
 
 ## Verification limitation
 
-Docker SQL Server runtime validation and Angular package restore/build are not covered by the local backend CI script.
+Docker stack and SQL Server runtime were not executed inside the build sandbox. The hosted demo at https://waofm-demo.madewellrd.com is the runtime verification surface. All build-time and test-time gates pass.
+
+## Sign-off
+
+All 18 planned interview-prep tasks complete (one task — drafting a follow-up cover letter — was dropped at the user's request because the interview was already secured). The project is ready for live demo on 2026-05-15.
