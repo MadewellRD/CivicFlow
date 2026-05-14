@@ -8,8 +8,11 @@ node_modules/
 dist/
 .angular/
 /work/
+.env
+.playwright-mcp/
 appsettings.Development.local.json
 AGENTS.md
 Agents.md
+~$*
 *.user
 *.suo
