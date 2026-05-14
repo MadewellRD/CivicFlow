@@ -25,14 +25,17 @@ ENV ASPNETCORE_URLS=http://+:8080 \
     DOTNET_CLI_TELEMETRY_OPTOUT=true
 EXPOSE 8080
 
-# Run as a non-root user so a compromised container cannot escalate.
-RUN useradd --uid 10001 --create-home --shell /usr/sbin/nologin civicflow \
+# Healthcheck uses curl; install it before dropping privileges.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --uid 10001 --create-home --shell /usr/sbin/nologin civicflow \
     && mkdir -p /app && chown -R civicflow:civicflow /app
 USER civicflow
 
 COPY --from=build --chown=civicflow:civicflow /app/publish .
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 \
-    CMD wget --quiet --tries=1 --spider http://localhost:8080/health || exit 1
+    CMD curl --fail --silent --show-error http://localhost:8080/health > /dev/null || exit 1
 
 ENTRYPOINT ["dotnet", "CivicFlow.Api.dll"]
