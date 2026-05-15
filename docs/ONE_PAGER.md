@@ -2,7 +2,7 @@
 
 **What it is.** A portfolio-grade .NET 8 / SQL Server / Angular 18 application that mirrors the kind of system Washington State OFM application developers maintain: budget request intake, workflow routing, finance data correction, legacy integration repair, full audit and notification trails, ServiceNow-shape business-rule / transform-map / UI-policy engines, and two AI-assisted features built around a governed model-adapter pipeline.
 
-**Who built it.** William Madewell. Designed and implemented over two days as the WOW project for the OFM IT Application Developer (Journey-in-Training) interview on 2026-05-15. Built using AI-orchestrated development — the same skill set documented in the resume (PROMETHEUS, ROGUE: OPS, Society) applied to a clean-room .NET application.
+**Who built it.** William Madewell. Designed and implemented as a full-stack budget operations platform targeting the Office of Financial Management application developer stack. Built using AI-orchestrated development — the same skill set documented in the resume (PROMETHEUS, ROGUE: OPS, Society) applied to a clean-room .NET application.
 
 **Why it matters for the job.** The JD asks for .NET 8 with SQL Server, T-SQL stored procedures, JavaScript/HTML/CSS frontend work, REST integrations, Agile/DevOps practice, mission-critical 24/7 support skills, and ServiceNow developer fluency at the Journey level. CivicFlow exercises every one of those bullets in code that runs, with tests that pass, in an architecture that scales beyond the demo.
 

@@ -30,7 +30,7 @@ interface KpiSet {
             <span class="pill pill-amber" style="background: rgba(245,166,35,0.2); color: var(--amber-500);">Portfolio demo · OFM IT Application Developer</span>
             <h1 style="color: var(--white); font-size: var(--text-3xl);">A .NET 8 budget operations platform with governed AI in the loop.</h1>
             <p style="color: var(--ice-300); font-size: var(--text-base); line-height: 1.6;">
-              13-state workflow, 12 role-based authorization policies, ServiceNow-shape Business Rules and Transform Maps, schema-enforced AI features with cost telemetry and a kill-switch. Built end-to-end as a WOW project for the Olympia interview.
+              13-state workflow, 12 role-based authorization policies, ServiceNow-shape Business Rules and Transform Maps, schema-enforced AI features with cost telemetry and a kill-switch. Built end-to-end as a full-stack budget operations platform for the Washington State Office of Financial Management.
             </p>
             <div class="row gap-3 mt-2">
               <a routerLink="/requests" class="btn btn-accent">
