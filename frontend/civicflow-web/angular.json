@@ -14,6 +14,7 @@
             "index": "src/index.html",
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
+            "outputHashing": "all",
             "optimization": {
               "fonts": {
                 "inline": false
