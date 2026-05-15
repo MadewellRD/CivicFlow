@@ -100,6 +100,7 @@ public sealed class ImportErrorExplainerService
             batch.Id,
             $"Generated {explanations.Count} AI explanations for batch {batch.FileName}. Estimated cost ${totalCost:F4}.",
             cancellationToken);
+        await _imports.SaveChangesAsync(cancellationToken);
 
         return new ImportErrorExplanationBatchDto(
             BatchId: batch.Id,

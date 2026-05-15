@@ -58,6 +58,7 @@ public sealed class RequestWorkflowService
             BusinessRulePhase.Async,
             new BusinessRuleContext(BusinessRuleTable.Request, BusinessRuleTrigger.Inserted, dto.RequesterId, request, null),
             cancellationToken);
+        await _requests.SaveChangesAsync(cancellationToken);
 
         return RequestDto.FromEntity(request);
     }
@@ -135,6 +136,7 @@ public sealed class RequestWorkflowService
             BusinessRulePhase.After,
             new BusinessRuleContext(BusinessRuleTable.Request, BusinessRuleTrigger.StatusChanged, actorUserId, request, null),
             cancellationToken);
+        await _requests.SaveChangesAsync(cancellationToken);
 
         return RequestDto.FromEntity(request);
     }

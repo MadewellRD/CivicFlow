@@ -70,6 +70,7 @@ public sealed class TriageRouterService
                 request.Id,
                 $"Triage fallback generated: queue='{fallback.RecommendedQueue}', kill_switch={fallback.ServedFromKillSwitch}, confidence='{fallback.Confidence}', reason='{response.FailureReason}'.",
                 cancellationToken);
+            await _requests.SaveChangesAsync(cancellationToken);
 
             return fallback;
         }
@@ -81,6 +82,7 @@ public sealed class TriageRouterService
             request.Id,
             $"Triage recommendation generated: queue='{response.Value.RecommendedQueue}', complexity='{response.Value.Complexity}', human_review={response.Value.HumanReviewRequired}, confidence='{response.Value.Confidence}'.",
             cancellationToken);
+        await _requests.SaveChangesAsync(cancellationToken);
 
         return new TriageRecommendationDto(
             RequestId: request.Id,
