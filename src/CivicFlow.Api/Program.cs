@@ -79,6 +79,10 @@ api.MapGet("/requests", async (RequestWorkflowService service, CancellationToken
     Results.Ok(await service.ListAsync(cancellationToken)))
     .RequireAuthorization(AuthConstants.Policies.AuthenticatedUser);
 
+api.MapGet("/stats/overview", async (StatsService service, CancellationToken cancellationToken) =>
+    Results.Ok(await service.GetOverviewAsync(cancellationToken)))
+    .RequireAuthorization(AuthConstants.Policies.AuthenticatedUser);
+
 api.MapGet("/requests/{id:guid}", async (Guid id, RequestWorkflowService service, CancellationToken cancellationToken) =>
     Results.Ok(await service.GetAsync(id, cancellationToken)))
     .RequireAuthorization(AuthConstants.Policies.AuthenticatedUser);

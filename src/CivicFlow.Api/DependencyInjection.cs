@@ -11,6 +11,7 @@ public static class DependencyInjection
         services.AddScoped<ImportValidationService>();
         services.AddScoped<ImportErrorExplainerService>();
         services.AddScoped<TriageRouterService>();
+        services.AddScoped<StatsService>();
         services.AddScoped<IBusinessRule, OversightThresholdBusinessRule>();
         services.AddScoped<IBusinessRule, LegacyIntegrationTagBusinessRule>();
         services.AddScoped<BusinessRuleEngine>();

@@ -23,6 +23,7 @@ public static class DependencyInjection
         services.AddScoped<IImportRepository, ImportRepository>();
         services.AddScoped<IReferenceDataProvider, EfReferenceDataProvider>();
         services.AddScoped<IAuditWriter, EfAuditWriter>();
+        services.AddScoped<IAuditQueryService, EfAuditQueryService>();
         services.AddScoped<INotificationService, EfNotificationService>();
         services.AddCivicFlowAi(configuration);
         services.AddScoped<DemoDataSeeder>();

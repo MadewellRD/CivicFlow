@@ -23,7 +23,7 @@ export class CivicFlowApiService {
     private readonly http: HttpClient,
     @Optional() @Inject(CIVICFLOW_API_BASE_URL) configuredBaseUrl: string | null
   ) {
-    this.baseUrl = configuredBaseUrl ?? 'http://localhost:5000/api';
+    this.baseUrl = configuredBaseUrl ?? defaultApiBaseUrl();
   }
 
   // Identity
@@ -72,4 +72,12 @@ export class CivicFlowApiService {
   explainImportErrors(batchId: string, actorUserId: string): Observable<ImportErrorExplanationBatch> {
     return this.http.post<ImportErrorExplanationBatch>(`${this.baseUrl}/imports/${batchId}/explain-errors`, { actorUserId });
   }
+}
+
+function defaultApiBaseUrl(): string {
+  if (typeof location !== 'undefined' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+    return '/api';
+  }
+
+  return 'http://localhost:5000/api';
 }

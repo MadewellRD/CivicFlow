@@ -11,44 +11,37 @@ import { UserContextService } from './user-context.service';
   imports: [CommonModule, FormsModule],
   template: `
     <div class="role-switcher" *ngIf="users.length > 0">
-      <label>
-        Acting as
+      <div class="role-avatar">{{ initials(activeUser) }}</div>
+      <div class="stack">
+        <span class="label">Acting as</span>
         <select [ngModel]="activeUserId" (ngModelChange)="onUserChange($event)">
-          <option *ngFor="let user of users" [value]="user.id">
-            {{ user.displayName }} &mdash; {{ user.primaryRole }}
-          </option>
+          <option *ngFor="let u of users" [value]="u.id">{{ u.displayName }} — {{ u.primaryRole }}</option>
         </select>
-      </label>
+      </div>
     </div>
   `,
-  styles: [`
-    .role-switcher select { margin-left: 0.5rem; }
-    .role-switcher { display: inline-flex; align-items: center; font-size: 0.9rem; }
-  `]
 })
 export class RoleSwitcherComponent implements OnInit {
   users: RosterUser[] = [];
   activeUserId: string | null = null;
-
-  constructor(
-    private readonly api: CivicFlowApiService,
-    private readonly userContext: UserContextService
-  ) {}
-
+  activeUser: RosterUser | null = null;
+  constructor(private readonly api: CivicFlowApiService, private readonly ctx: UserContextService) {}
   ngOnInit(): void {
     this.api.listUsers().subscribe(users => {
       this.users = users;
-      if (!this.userContext.currentUserId && users.length > 0) {
-        this.userContext.setActiveUser(users[0].id);
-      }
-      this.activeUserId = this.userContext.currentUserId;
+      if (!this.ctx.currentUserId && users.length) this.ctx.setActiveUser(users[0].id);
+      this.activeUserId = this.ctx.currentUserId;
+      this.activeUser = users.find(u => u.id === this.activeUserId) ?? null;
     });
   }
-
-  onUserChange(userId: string): void {
-    this.userContext.setActiveUser(userId);
-    this.activeUserId = userId;
-    // Soft refresh so views requery with the new identity
+  onUserChange(id: string) {
+    this.ctx.setActiveUser(id);
+    this.activeUserId = id;
+    this.activeUser = this.users.find(u => u.id === id) ?? null;
     location.reload();
+  }
+  initials(u: RosterUser | null): string {
+    if (!u) return '';
+    return u.displayName.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase();
   }
 }
