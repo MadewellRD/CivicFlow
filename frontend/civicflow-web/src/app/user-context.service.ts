@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 
 const STORAGE_KEY = 'civicflow:active-user-id';
+const DEFAULT_USER_ID = '10000000-0000-0000-0000-000000000001';
 
 /**
  * Holds the active demo user id. The interceptor reads this on every request
@@ -15,7 +16,7 @@ export class UserContextService {
 
   constructor() {
     const persisted = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
-    this.activeUserSubject = new BehaviorSubject<string | null>(persisted);
+    this.activeUserSubject = new BehaviorSubject<string | null>(persisted ?? DEFAULT_USER_ID);
   }
 
   get activeUserId$(): Observable<string | null> {
