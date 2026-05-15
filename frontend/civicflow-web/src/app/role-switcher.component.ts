@@ -38,7 +38,6 @@ export class RoleSwitcherComponent implements OnInit {
     this.ctx.setActiveUser(id);
     this.activeUserId = id;
     this.activeUser = this.users.find(u => u.id === id) ?? null;
-    location.reload();
   }
   initials(u: RosterUser | null): string {
     if (!u) return '';

@@ -9,7 +9,7 @@
 **What's in the box.**
 
 - 13-state request workflow with deterministic transition guards.
-- 11 role-based authorization policies enforced on every endpoint.
+- 12 role-based authorization policies enforced on every endpoint.
 - 10-rule import validation pipeline with field-level error capture.
 - 3 T-SQL stored procedures (validation, batch summary, aging report).
 - ServiceNow-shape platform layer: BusinessRule engine with Before/After/Async phases, TransformMap and UIPolicy abstractions, all exposed at `/api/platform/*` for introspection.
@@ -23,7 +23,7 @@
 - 29/29 xUnit tests passing.
 - 0 warnings, 0 errors at Release configuration.
 - 13 statuses in the workflow state machine.
-- 6 user roles, 11 policies, 0 endpoints without a policy.
+- 6 user roles, 12 policies, 0 endpoints without a policy.
 - 1 line in `appsettings.json` flips AI from real Anthropic calls to deterministic mock.
 - 1 line in `appsettings.json` engages the kill-switch and short-circuits every model call with a logged event.
 

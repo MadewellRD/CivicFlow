@@ -11,19 +11,20 @@ Final dress-rehearsal verification of CivicFlow as of 2026-05-14, the day before
 | `dotnet --info` | passed | .NET SDK 8.0.421 |
 | `dotnet restore CivicFlow.sln` | passed | All 5 projects restored |
 | `dotnet build CivicFlow.sln --configuration Release` | passed | **0 warnings, 0 errors** |
-| `dotnet test CivicFlow.sln --configuration Release --no-build` | passed | **29 / 29 tests passing** |
-| `npx ng build` (frontend/civicflow-web) | passed | 326 KB main bundle, 87 KB transferred |
-| `python scripts/verify_static.py` | not re-run | Static layout unchanged since previous pass |
+| `dotnet test CivicFlow.sln --configuration Release` | passed | **35 / 35 tests passing** |
+| `npm run build` (frontend/civicflow-web) | passed | 386.55 KB initial bundle, 100.09 KB transferred |
+| `python scripts/verify_static.py` | passed | Static contract check passed |
 | Docker build (API) | not run in sandbox | Dockerfile reviewed manually; multi-stage, non-root, healthcheck |
 | Docker build (Web) | not run in sandbox | Multi-stage Node → nginx; nginx config reverse-proxies /api |
 | Docker compose up (full stack) | not run in sandbox | Hosted demo deploys this; instructions in README + .env.example |
 
-## Test inventory (29 tests, all passing)
+## Test inventory (35 tests, all passing)
 
 - WorkflowTests (5): DraftRequestCanMoveToSubmittedButNotApproved, SubmitRequestWritesAuditAndNotification, InvalidTransitionThrowsDomainException, OversightThresholdBusinessRuleFiresOnLargeRequestSubmit, LegacyIntegrationTagFiresOnInsertForLegacyCategory.
 - ImportValidationTests (3): ValidImportRowIsAccepted, InvalidImportRowIsRejectedWithFieldErrors, TransformBatchCreatesSubmittedRequestAndMarksRowTransformed.
-- AuthPolicyTests (13): role-to-policy matrix coverage + anonymous-user rejection.
-- ModelAdapterTests (5): kill-switch short-circuit, mock determinism, mock fail-clean, schema registry hit/miss.
+- AuthPolicyTests (17): role-to-policy matrix coverage + anonymous-user rejection.
+- ModelAdapterTests (6): kill-switch short-circuit, mock determinism, mock fail-clean, schema registry hit/miss, Anthropic camel-case payload.
+- PersistenceConfigurationTests (1): enum conversion for status history persistence.
 - ImportErrorExplainerServiceTests (1): explains only rejected rows, ignores valid, audit entry recorded.
 - TriageRouterServiceTests (2): mock end-to-end, kill-switch safe-default path.
 
@@ -39,7 +40,7 @@ Final dress-rehearsal verification of CivicFlow as of 2026-05-14, the day before
 | Audit logging | `AuditLog` entity, `EfAuditWriter`, called from workflow + AI services + business rules | implemented |
 | Data import repair | `ImportValidationService`, `ImportErrorExplainerService`, Angular Import Repair Center | implemented |
 | Angular UI | `frontend/civicflow-web` | implemented, builds clean |
-| Role-based authz | `AuthRegistration`, 11 policies, every endpoint gated | implemented, 13 tests |
+| Role-based authz | `AuthRegistration`, 12 policies, every endpoint gated | implemented, 17 tests |
 | AI features | Import Error Explainer + Triage Router | implemented, 3 tests |
 | ServiceNow-shape platform | `Platform/IBusinessRule`, `BusinessRuleEngine`, two concrete rules, `ITransformMap`, `UiPolicyCatalog` | implemented, 2 tests |
 | Demo seeder | `Infrastructure/Seeding/DemoDataSeeder.cs`, runs on startup | implemented |

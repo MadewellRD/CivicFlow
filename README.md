@@ -24,7 +24,7 @@ Author: William Madewell — [william@madewellrd.com](mailto:william@madewellrd.
 | Persistence | EF Core 8 + SQL Server 2022, T-SQL stored procedures, raw-SQL initial migration |
 | AI | Adapter pattern: Anthropic Messages API, deterministic mock, kill-switch decorator; cost telemetry baked in |
 | Frontend | Angular 18 standalone components, functional HTTP interceptors, role switcher |
-| Tests | xUnit on .NET 8 — 29 tests covering workflow, validation, auth policies, AI adapters, AI services, and business rules |
+| Tests | xUnit on .NET 8 — 35 tests covering workflow, validation, auth policies, AI adapters, AI services, and business rules |
 | Ops | Multi-stage Dockerfiles, docker-compose with healthchecks, env-driven config |
 
 ## Repository layout
@@ -116,7 +116,7 @@ Set `Ai__AnthropicApiKey` via env var (never check it in). Toggling `KillSwitchE
 dotnet test CivicFlow.sln --configuration Release
 ```
 
-29 tests across:
+35 tests across:
 
 - workflow state machine and side effects
 - import validation and transformation

@@ -45,15 +45,39 @@ export class CivicFlowApiService {
   }
 
   submitRequest(id: string, actorUserId: string): Observable<CivicRequest> {
-    return this.http.post<CivicRequest>(`${this.baseUrl}/requests/${id}/submit?actorUserId=${actorUserId}`, {});
+    return this.transitionRequest(id, 'submit', actorUserId);
   }
 
   triageRequest(id: string, actorUserId: string): Observable<CivicRequest> {
-    return this.http.post<CivicRequest>(`${this.baseUrl}/requests/${id}/triage?actorUserId=${actorUserId}`, {});
+    return this.transitionRequest(id, 'triage', actorUserId);
+  }
+
+  sendToAnalystReview(id: string, actorUserId: string): Observable<CivicRequest> {
+    return this.transitionRequest(id, 'analyst-review', actorUserId);
+  }
+
+  sendToTechnicalReview(id: string, actorUserId: string): Observable<CivicRequest> {
+    return this.transitionRequest(id, 'technical-review', actorUserId);
   }
 
   approveRequest(id: string, actorUserId: string): Observable<CivicRequest> {
-    return this.http.post<CivicRequest>(`${this.baseUrl}/requests/${id}/approve?actorUserId=${actorUserId}`, {});
+    return this.transitionRequest(id, 'approve', actorUserId);
+  }
+
+  markImplemented(id: string, actorUserId: string): Observable<CivicRequest> {
+    return this.transitionRequest(id, 'implemented', actorUserId);
+  }
+
+  closeRequest(id: string, actorUserId: string): Observable<CivicRequest> {
+    return this.transitionRequest(id, 'close', actorUserId);
+  }
+
+  reopenRequest(id: string, actorUserId: string): Observable<CivicRequest> {
+    return this.transitionRequest(id, 'reopen', actorUserId);
+  }
+
+  rejectRequest(id: string, actorUserId: string, reason: string): Observable<CivicRequest> {
+    return this.http.post<CivicRequest>(`${this.baseUrl}/requests/${id}/reject`, { actorUserId, reason });
   }
 
   recommendTriage(id: string): Observable<TriageRecommendation> {
@@ -71,6 +95,10 @@ export class CivicFlowApiService {
 
   explainImportErrors(batchId: string, actorUserId: string): Observable<ImportErrorExplanationBatch> {
     return this.http.post<ImportErrorExplanationBatch>(`${this.baseUrl}/imports/${batchId}/explain-errors`, { actorUserId });
+  }
+
+  private transitionRequest(id: string, endpoint: string, actorUserId: string): Observable<CivicRequest> {
+    return this.http.post<CivicRequest>(`${this.baseUrl}/requests/${id}/${endpoint}?actorUserId=${actorUserId}`, {});
   }
 }
 

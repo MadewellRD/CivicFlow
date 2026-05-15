@@ -1,11 +1,31 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+import { Observable } from 'rxjs';
 import { CivicFlowApiService } from './civicflow-api.service';
-import { CivicRequest, CreateRequest, TriageRecommendation, RosterUser } from './models';
+import { CivicRequest, CreateRequest, TriageRecommendation } from './models';
 import { UserContextService } from './user-context.service';
 import { StatusBadgeComponent } from './status-badge.component';
 import { IconComponent } from './icon.component';
+
+type WorkflowTransition =
+  | 'submit'
+  | 'triage'
+  | 'analyst-review'
+  | 'technical-review'
+  | 'approve'
+  | 'implemented'
+  | 'close'
+  | 'reopen'
+  | 'reject';
+
+interface WorkflowAction {
+  label: string;
+  transitionEndpoint: WorkflowTransition;
+  requiresReason?: boolean;
+  allowedRoles: string[];
+}
 
 @Component({
   selector: 'app-requests-page',
@@ -95,15 +115,41 @@ import { IconComponent } from './icon.component';
                 <span *ngIf="r.submittedAt"><strong>Submitted:</strong> {{ relative(r.submittedAt) }}</span>
               </div>
             </div>
-            <div class="row gap-2" style="flex-shrink: 0;">
-              <button type="button" class="btn btn-ghost btn-sm" *ngIf="r.status === 'Draft'" (click)="submit(r)">
-                <app-icon name="send" [size]="12"></app-icon> Submit
+            <div class="row gap-2" style="flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end;">
+              <button
+                *ngFor="let action of nextActionsFor(r)"
+                type="button"
+                [class]="buttonClass(action)"
+                (click)="startAction(r, action)"
+                [disabled]="transitionBusy.has(r.id)">
+                {{ action.label }}
               </button>
               <button type="button" class="btn btn-ai btn-sm" (click)="recommend(r.id)" [disabled]="busy.has(r.id)">
                 <app-icon name="sparkles" [size]="12"></app-icon>
                 <span *ngIf="!busy.has(r.id)">AI triage</span>
                 <span *ngIf="busy.has(r.id)" class="row gap-2"><span class="spinner"></span> Thinking…</span>
               </button>
+            </div>
+          </div>
+
+          <div *ngIf="rejectingRequestId === r.id" class="stack gap-2" style="border-top: 1px solid var(--ink-100); padding-top: var(--space-3);">
+            <div class="field">
+              <label>Reject reason</label>
+              <textarea
+                class="textarea"
+                [name]="'reject-reason-' + r.id"
+                [(ngModel)]="rejectReasons[r.id]"
+                placeholder="Explain why this request should not proceed."></textarea>
+            </div>
+            <div class="row gap-2">
+              <button
+                type="button"
+                class="btn btn-danger-ghost btn-sm"
+                (click)="confirmReject(r)"
+                [disabled]="transitionBusy.has(r.id) || !rejectReasons[r.id] || !rejectReasons[r.id].trim()">
+                Reject request
+              </button>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="cancelReject(r.id)">Cancel</button>
             </div>
           </div>
 
@@ -161,7 +207,10 @@ import { IconComponent } from './icon.component';
 export class RequestsPageComponent implements OnInit {
   requests: CivicRequest[] = [];
   busy = new Set<string>();
+  transitionBusy = new Set<string>();
   triage = new Map<string, TriageRecommendation>();
+  rejectReasons: Record<string, string> = {};
+  rejectingRequestId: string | null = null;
   creating = false;
   filterStatus = '';
   currentActorName = '';
@@ -176,13 +225,21 @@ export class RequestsPageComponent implements OnInit {
     businessJustification: 'Revised caseload projections require a supplemental allotment.'
   };
 
-  constructor(private readonly api: CivicFlowApiService, private readonly ctx: UserContextService) {}
+  constructor(
+    private readonly api: CivicFlowApiService,
+    private readonly ctx: UserContextService,
+    private readonly route: ActivatedRoute
+  ) {}
 
   ngOnInit(): void {
     this.ctx.activeUserId$.subscribe(id => { this.draft.requesterId = id ?? ''; });
-    this.api.listUsers().subscribe(users => {
-      const me = users.find(u => u.id === this.ctx.currentUserId);
-      this.currentActorName = me ? `${me.displayName} (${me.primaryRole})` : '';
+    this.ctx.currentUser$.subscribe(user => {
+      this.currentActorName = user ? `${user.displayName} (${user.role})` : '';
+      this.rejectingRequestId = null;
+    });
+    this.route.queryParamMap.subscribe(params => {
+      const status = params.get('status') ?? '';
+      this.filterStatus = this.allStatuses.includes(status) ? status : '';
     });
     this.load();
   }
@@ -202,10 +259,123 @@ export class RequestsPageComponent implements OnInit {
     });
   }
 
-  submit(r: CivicRequest): void {
+  nextActionsFor(request: CivicRequest): WorkflowAction[] {
+    const role = this.ctx.currentUserRole;
+    if (!role) return [];
+
+    return this.actionsForStatus(request.status)
+      .filter(action => action.allowedRoles.includes(role));
+  }
+
+  buttonClass(action: WorkflowAction): string {
+    return action.transitionEndpoint === 'reject'
+      ? 'btn btn-danger-ghost btn-sm'
+      : 'btn btn-ghost btn-sm';
+  }
+
+  startAction(request: CivicRequest, action: WorkflowAction): void {
+    if (action.requiresReason) {
+      this.rejectingRequestId = this.rejectingRequestId === request.id ? null : request.id;
+      this.rejectReasons[request.id] ??= '';
+      return;
+    }
+
+    this.executeAction(request, action);
+  }
+
+  confirmReject(request: CivicRequest): void {
+    const reason = (this.rejectReasons[request.id] ?? '').trim();
+    if (!reason) return;
+    this.executeAction(request, {
+      label: 'Reject',
+      transitionEndpoint: 'reject',
+      requiresReason: true,
+      allowedRoles: [],
+    }, reason);
+  }
+
+  cancelReject(requestId: string): void {
+    this.rejectingRequestId = null;
+    delete this.rejectReasons[requestId];
+  }
+
+  private executeAction(request: CivicRequest, action: WorkflowAction, reason?: string): void {
     const id = this.ctx.currentUserId;
     if (!id) return;
-    this.api.submitRequest(r.id, id).subscribe(() => this.load());
+    this.transitionBusy.add(request.id);
+    this.callTransition(request.id, action.transitionEndpoint, id, reason).subscribe({
+      next: () => {
+        this.transitionBusy.delete(request.id);
+        this.cancelReject(request.id);
+        this.load();
+      },
+      error: () => this.transitionBusy.delete(request.id),
+    });
+  }
+
+  private callTransition(requestId: string, transition: WorkflowTransition, actorUserId: string, reason?: string): Observable<CivicRequest> {
+    switch (transition) {
+      case 'submit':
+        return this.api.submitRequest(requestId, actorUserId);
+      case 'triage':
+        return this.api.triageRequest(requestId, actorUserId);
+      case 'analyst-review':
+        return this.api.sendToAnalystReview(requestId, actorUserId);
+      case 'technical-review':
+        return this.api.sendToTechnicalReview(requestId, actorUserId);
+      case 'approve':
+        return this.api.approveRequest(requestId, actorUserId);
+      case 'implemented':
+        return this.api.markImplemented(requestId, actorUserId);
+      case 'close':
+        return this.api.closeRequest(requestId, actorUserId);
+      case 'reopen':
+        return this.api.reopenRequest(requestId, actorUserId);
+      case 'reject':
+        return this.api.rejectRequest(requestId, actorUserId, reason ?? 'Rejected from the request board.');
+    }
+
+    throw new Error(`Unsupported workflow transition: ${transition}`);
+  }
+
+  private actionsForStatus(status: string): WorkflowAction[] {
+    const requester = ['Requester', 'Admin'];
+    const analyst = ['BudgetAnalyst', 'Admin'];
+    const technicalReview = ['BudgetAnalyst', 'ApplicationDeveloper', 'Admin'];
+    const rejectFromTriage = ['BudgetAnalyst', 'Approver', 'Admin'];
+    const approver = ['Approver', 'Admin'];
+
+    switch (status) {
+      case 'Draft':
+        return [{ label: 'Submit', transitionEndpoint: 'submit', allowedRoles: requester }];
+      case 'Submitted':
+        return [{ label: 'Move to triage', transitionEndpoint: 'triage', allowedRoles: analyst }];
+      case 'Triage':
+        return [
+          { label: 'Analyst review', transitionEndpoint: 'analyst-review', allowedRoles: analyst },
+          { label: 'Technical review', transitionEndpoint: 'technical-review', allowedRoles: technicalReview },
+          { label: 'Reject', transitionEndpoint: 'reject', requiresReason: true, allowedRoles: rejectFromTriage },
+        ];
+      case 'AnalystReview':
+        return [
+          { label: 'Technical review', transitionEndpoint: 'technical-review', allowedRoles: technicalReview },
+          { label: 'Approve', transitionEndpoint: 'approve', allowedRoles: approver },
+          { label: 'Reject', transitionEndpoint: 'reject', requiresReason: true, allowedRoles: approver },
+        ];
+      case 'TechnicalReview':
+        return [
+          { label: 'Approve', transitionEndpoint: 'approve', allowedRoles: approver },
+          { label: 'Reject', transitionEndpoint: 'reject', requiresReason: true, allowedRoles: approver },
+        ];
+      case 'Approved':
+        return [{ label: 'Mark implemented', transitionEndpoint: 'implemented', allowedRoles: ['ApplicationDeveloper', 'Approver', 'Admin'] }];
+      case 'Implemented':
+        return [{ label: 'Close', transitionEndpoint: 'close', allowedRoles: approver }];
+      case 'Closed':
+        return [{ label: 'Reopen', transitionEndpoint: 'reopen', allowedRoles: ['Admin'] }];
+      default:
+        return [];
+    }
   }
 
   recommend(id: string): void {

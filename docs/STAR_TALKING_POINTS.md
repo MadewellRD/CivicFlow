@@ -24,8 +24,8 @@ Keep this open on a second screen during the interview. Don't read from it — i
 
 - **Situation.** Job posting calls for .NET 8 + SQL + Angular + ServiceNow-shape work. My resume foregrounds AI/MLOps. I needed to make the JD-stack fluency visible.
 - **Task.** Build a portfolio-grade application in two days that exercises every Journey-level JD bullet, with a real architecture, not a CRUD demo.
-- **Action.** Clean-architecture .NET 8 (Domain/Application/Infrastructure/Api), EF Core with raw-SQL initial migration, T-SQL stored procedures, in-process state machine with 13 statuses, 11 role-based authz policies, idempotent demo seeder, Dockerized stack, two AI features over a governed adapter pipeline, ServiceNow-shape platform layer.
-- **Result.** 29 passing tests, zero warnings at Release, end-to-end Dockerized demo, all major JD bullets visibly addressed in code that builds clean.
+- **Action.** Clean-architecture .NET 8 (Domain/Application/Infrastructure/Api), EF Core with raw-SQL initial migration, T-SQL stored procedures, in-process state machine with 13 statuses, 12 role-based authz policies, idempotent demo seeder, Dockerized stack, two AI features over a governed adapter pipeline, ServiceNow-shape platform layer.
+- **Result.** 35 passing tests, zero warnings at Release, end-to-end Dockerized demo, all major JD bullets visibly addressed in code that builds clean.
 
 **Bridge.** "Happy to share screen and click through any layer — domain, services, AI pipeline, platform layer."
 
@@ -64,7 +64,7 @@ Keep this open on a second screen during the interview. Don't read from it — i
 - **S.** Designing AI systems for high-risk decision domains where a bad model output has real-world cost. Healthcare, access control, financial workflows.
 - **T.** Make safety properties enforceable in code, not in policy documents.
 - **A.** Designed ROGUE: OPS with deterministic constraints, non-overridable execution boundaries, tiered authority (LAW/PB/REF), and explicit kill-switch logic. Carried the pattern into CivicFlow as a four-layer adapter pipeline: schema-enforced output via `IPromptSchemaRegistry`, cost telemetry on every invocation, a `KillSwitchAdapter` decorator that short-circuits with a deterministic safe default and audit event, a `DeterministicMockAdapter` for offline demos and CI.
-- **R.** In CivicFlow, every AI invocation is observable (provider, tokens, USD, latency, mock/kill-switch flags), governable (one config flag disables it), and recoverable (safe defaults flow through to the UI when the model fails). 29 tests lock down the contract.
+- **R.** In CivicFlow, every AI invocation is observable (provider, tokens, USD, latency, mock/kill-switch flags), governable (one config flag disables it), and recoverable (safe defaults flow through to the UI when the model fails). 35 tests lock down the contract.
 
 **Bridge.** "The interview demo will show the kill-switch flipping live. The model says nothing, the audit log records why, the UI keeps working."
 

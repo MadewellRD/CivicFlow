@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { CurrentUser } from './models';
 
 const STORAGE_KEY = 'civicflow:active-user-id';
 const DEFAULT_USER_ID = '10000000-0000-0000-0000-000000000001';
@@ -13,6 +14,7 @@ const DEFAULT_USER_ID = '10000000-0000-0000-0000-000000000001';
 @Injectable({ providedIn: 'root' })
 export class UserContextService {
   private readonly activeUserSubject: BehaviorSubject<string | null>;
+  private readonly currentUserSubject = new BehaviorSubject<CurrentUser | null>(null);
 
   constructor() {
     const persisted = typeof localStorage !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
@@ -23,12 +25,28 @@ export class UserContextService {
     return this.activeUserSubject.asObservable();
   }
 
+  get currentUser$(): Observable<CurrentUser | null> {
+    return this.currentUserSubject.asObservable();
+  }
+
   get currentUserId(): string | null {
     return this.activeUserSubject.value;
   }
 
+  get currentUserRole(): string | null {
+    return this.currentUserSubject.value?.role ?? null;
+  }
+
+  get currentUserDisplayName(): string | null {
+    return this.currentUserSubject.value?.displayName ?? null;
+  }
+
   setActiveUser(userId: string | null): void {
+    const previousUserId = this.activeUserSubject.value;
     this.activeUserSubject.next(userId);
+    if (!userId || userId !== previousUserId) {
+      this.currentUserSubject.next(null);
+    }
     if (typeof localStorage !== 'undefined') {
       if (userId) {
         localStorage.setItem(STORAGE_KEY, userId);
@@ -36,5 +54,12 @@ export class UserContextService {
         localStorage.removeItem(STORAGE_KEY);
       }
     }
+  }
+
+  setCurrentUser(user: CurrentUser | null): void {
+    if (user?.userId && user.userId !== this.activeUserSubject.value) {
+      this.setActiveUser(user.userId);
+    }
+    this.currentUserSubject.next(user);
   }
 }

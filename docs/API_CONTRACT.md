@@ -34,6 +34,7 @@ Workflow endpoints:
 - `POST /requests/{id}/approve?actorUserId={guid}`
 - `POST /requests/{id}/implemented?actorUserId={guid}`
 - `POST /requests/{id}/close?actorUserId={guid}`
+- `POST /requests/{id}/reopen?actorUserId={guid}`
 - `POST /requests/{id}/reject`
 
 ## Imports

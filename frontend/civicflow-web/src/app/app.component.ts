@@ -1,8 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { IconComponent } from './icon.component';
 import { RoleSwitcherComponent } from './role-switcher.component';
+import { CivicFlowApiService } from './civicflow-api.service';
+import { UserContextService } from './user-context.service';
 
 @Component({
   selector: 'app-root',
@@ -67,7 +69,23 @@ import { RoleSwitcherComponent } from './role-switcher.component';
     </div>
   `,
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
+  constructor(private readonly api: CivicFlowApiService, private readonly ctx: UserContextService) {}
+
+  ngOnInit(): void {
+    this.ctx.activeUserId$.subscribe(id => {
+      if (!id) {
+        this.ctx.setCurrentUser(null);
+        return;
+      }
+
+      this.api.me().subscribe({
+        next: user => this.ctx.setCurrentUser(user),
+        error: () => this.ctx.setCurrentUser(null),
+      });
+    });
+  }
+
   titleFromRoute(): string {
     const p = (typeof location !== 'undefined' ? location.pathname : '/').toLowerCase();
     if (p.startsWith('/requests')) return 'Requests';

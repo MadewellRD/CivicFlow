@@ -98,6 +98,11 @@ public sealed class RequestWorkflowService
         return TransitionAsync(requestId, RequestStatus.Closed, actorUserId, "Request closed.", cancellationToken);
     }
 
+    public Task<RequestDto> ReopenAsync(Guid requestId, Guid actorUserId, CancellationToken cancellationToken)
+    {
+        return TransitionAsync(requestId, RequestStatus.Reopened, actorUserId, "Request reopened.", cancellationToken);
+    }
+
     public Task<RequestDto> RejectAsync(Guid requestId, Guid actorUserId, string reason, CancellationToken cancellationToken)
     {
         return TransitionAsync(requestId, RequestStatus.Rejected, actorUserId, reason, cancellationToken);

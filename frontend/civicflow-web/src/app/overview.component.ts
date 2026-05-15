@@ -30,7 +30,7 @@ interface KpiSet {
             <span class="pill pill-amber" style="background: rgba(245,166,35,0.2); color: var(--amber-500);">Portfolio demo · OFM IT Application Developer</span>
             <h1 style="color: var(--white); font-size: var(--text-3xl);">A .NET 8 budget operations platform with governed AI in the loop.</h1>
             <p style="color: var(--ice-300); font-size: var(--text-base); line-height: 1.6;">
-              13-state workflow, 11 role-based authorization policies, ServiceNow-shape Business Rules and Transform Maps, schema-enforced AI features with cost telemetry and a kill-switch. Built end-to-end as a WOW project for the Olympia interview.
+              13-state workflow, 12 role-based authorization policies, ServiceNow-shape Business Rules and Transform Maps, schema-enforced AI features with cost telemetry and a kill-switch. Built end-to-end as a WOW project for the Olympia interview.
             </p>
             <div class="row gap-3 mt-2">
               <a routerLink="/requests" class="btn btn-accent">
@@ -92,7 +92,7 @@ interface KpiSet {
           </div>
           <table class="table">
             <thead>
-              <tr><th>Request</th><th>Title</th><th>Status</th></tr>
+              <tr><th>Request</th><th>Title</th><th>Status</th><th></th></tr>
             </thead>
             <tbody>
               <tr *ngFor="let r of recent">
@@ -102,8 +102,13 @@ interface KpiSet {
                   <div class="text-xs text-muted">{{ humanize(r.category) }}</div>
                 </td>
                 <td><app-status-badge [status]="r.status"></app-status-badge></td>
+                <td style="text-align: right;">
+                  <a routerLink="/requests" [queryParams]="{ status: r.status }" class="btn btn-ghost btn-sm" title="Open filtered request board">
+                    <app-icon name="arrowRight" [size]="12"></app-icon>
+                  </a>
+                </td>
               </tr>
-              <tr *ngIf="!recent.length"><td colspan="3" class="text-muted" style="text-align:center;padding:1.5rem;">No requests yet.</td></tr>
+              <tr *ngIf="!recent.length"><td colspan="4" class="text-muted" style="text-align:center;padding:1.5rem;">No requests yet.</td></tr>
             </tbody>
           </table>
         </div>
@@ -155,7 +160,7 @@ interface KpiSet {
             <app-icon name="shield" [size]="18"></app-icon>
             <h3 style="font-size: var(--text-base);">Role-based, audited</h3>
           </div>
-          <p class="text-sm text-muted">11 named authorization policies. Every endpoint gated, every status transition audited. Use the role switcher in the top right to see actions change.</p>
+          <p class="text-sm text-muted">12 named authorization policies. Every endpoint gated, every status transition audited. Use the role switcher in the top right to see actions change.</p>
           <span class="text-sm fw-semibold text-navy">Try switching to Read-Only Auditor →</span>
         </div>
       </div>

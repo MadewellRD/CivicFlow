@@ -51,6 +51,9 @@ public static class AuthRegistration
             options.AddPolicy(AuthConstants.Policies.CanCloseRequest, policy =>
                 policy.RequireRole(AuthConstants.Roles.Approver, AuthConstants.Roles.Admin));
 
+            options.AddPolicy(AuthConstants.Policies.CanReopenRequest, policy =>
+                policy.RequireRole(AuthConstants.Roles.Admin));
+
             options.AddPolicy(AuthConstants.Policies.CanRejectRequest, policy =>
                 policy.RequireRole(
                     AuthConstants.Roles.BudgetAnalyst,

@@ -121,6 +121,10 @@ api.MapPost("/requests/{id:guid}/close", async (Guid id, [FromQuery] Guid actorU
     Results.Ok(await service.CloseAsync(id, actorUserId, cancellationToken)))
     .RequireAuthorization(AuthConstants.Policies.CanCloseRequest);
 
+api.MapPost("/requests/{id:guid}/reopen", async (Guid id, [FromQuery] Guid actorUserId, RequestWorkflowService service, CancellationToken cancellationToken) =>
+    Results.Ok(await service.ReopenAsync(id, actorUserId, cancellationToken)))
+    .RequireAuthorization(AuthConstants.Policies.CanReopenRequest);
+
 api.MapPost("/requests/{id:guid}/reject", async (Guid id, RejectRequestBody body, RequestWorkflowService service, CancellationToken cancellationToken) =>
     Results.Ok(await service.RejectAsync(id, body.ActorUserId, body.Reason, cancellationToken)))
     .RequireAuthorization(AuthConstants.Policies.CanRejectRequest);

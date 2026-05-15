@@ -23,6 +23,7 @@ public static class AuthConstants
         public const string CanApproveRequest = "CanApproveRequest";
         public const string CanImplementRequest = "CanImplementRequest";
         public const string CanCloseRequest = "CanCloseRequest";
+        public const string CanReopenRequest = "CanReopenRequest";
         public const string CanRejectRequest = "CanRejectRequest";
         public const string CanRunImport = "CanRunImport";
         public const string CanReadReferenceData = "CanReadReferenceData";
