@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { CIVICFLOW_API_BASE_URL } from './civicflow-api.service';
+import { CIVICFLOW_API_BASE_URL, defaultApiBaseUrl } from './civicflow-api.service';
 import { Inject, Optional } from '@angular/core';
 import { IconComponent } from './icon.component';
 
@@ -96,7 +96,7 @@ export class PlatformInspectorComponent implements OnInit {
   policies: UiPolicyInfo[] = [];
   private readonly base: string;
   constructor(private readonly http: HttpClient, @Optional() @Inject(CIVICFLOW_API_BASE_URL) base: string | null) {
-    this.base = base ?? 'http://localhost:5000/api';
+    this.base = base ?? defaultApiBaseUrl();
   }
   ngOnInit(): void {
     this.http.get<BusinessRuleInfo[]>(`${this.base}/platform/business-rules`).subscribe(d => this.rules = d);

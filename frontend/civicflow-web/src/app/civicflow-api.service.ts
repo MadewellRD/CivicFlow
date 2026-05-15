@@ -74,7 +74,7 @@ export class CivicFlowApiService {
   }
 }
 
-function defaultApiBaseUrl(): string {
+export function defaultApiBaseUrl(): string {
   if (typeof location !== 'undefined' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
     return '/api';
   }
